@@ -3,9 +3,10 @@ import Footer from "./components/Footer"
 import { useState, useRef, useEffect } from 'react'
 import { v4 as uuidv4 } from 'uuid';
 import Lottie from "lottie-react";
-import copy from '../public/icons/copy.json'
-import edit from '../public/icons/edit.json'
-import delete_lottie from '../public/icons/delete_lottie.json'
+// import copy from './public/icons/copy.json?url'
+import copy from './icons/copy.json'
+import edit from './icons/edit.json'
+import delete_lottie from './icons/delete_lottie.json'
 import { ToastContainer, toast } from 'react-toastify';
 
 function App() {
@@ -175,9 +176,9 @@ function App() {
                                             </div>
 
                                         </td>
-                                        <td className="px-1 border border-white py-1 lg:w-[30%]">
+                                        <td className="px-1 w-[30%] border border-white py-1 lg:w-[30%]">
                                             <div className=" flex items-center justify-between">
-                                                {visiblePassword[element.id] ? <div className="break-all w-[70%]">{element.pass}</div>  : <div className="break-all">---</div>}
+                                                {visiblePassword[element.id] ? <div className="break-all w-[40%]">{element.pass}</div>  : <div className="break-all">---</div>}
                                                 <span className="flex gap-2">
                                                     <img onClick={() => toggleVisibility(element.id)} src={visiblePassword[element.id] ? "icons/hidden.svg" : "icons/visible.svg"} alt="hidden" />
                                                     <Lottie onClick={() => notify(element.pass, "Password")} animationData={copy} loop={false} autoplay={false} style={{ height: 25, width: 25 }} />
