@@ -1,6 +1,6 @@
 import Navbar from "./components/Navbar"
 import Footer from "./components/Footer"
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, use } from 'react'
 import { v4 as uuidv4 } from 'uuid';
 import Lottie from "lottie-react";
 // import copy from './public/icons/copy.json?url'
@@ -14,15 +14,30 @@ function App() {
     const passwordVisibilityRef = useRef()
     const passInpRef = useRef()
     const [password, setPassword] = useState({ website: "", username: "", pass: "", id: "" })
-    const initialPasswords = JSON.parse(localStorage.getItem("passwords")) || [];
-    const [passwords, setPasswords] = useState(initialPasswords)
+
+    const fetchPasswords = async () => {
+        const res = await fetch('http://localhost:3000')
+        let pass = await res.json()
+        if (pass) {
+            setPasswords(pass)
+        }
+    }
+    // const initialPasswords = JSON.parse(localStorage.getItem("passwords")) || [];
+    // console.log(fetchPasswords())
+    // const initialPasswords = fetchPasswords() || [];
+    const [passwords, setPasswords] = useState([])
     const [isEditable, setisEditable] = useState(false)
-    const [visiblePassword, setVisiblePassword] = useState(initialPasswords.reduce((acc, item) => {
-                                                            acc[item.id] = false;
-                                                            return acc;
-                                                            }, {})
-                                                        );
+    const [visiblePassword, setVisiblePassword] = useState(passwords.reduce((acc, item) => {
+        acc[item.id] = false;
+        return acc;
+    }, {})
+    );
     const indexRef = useRef(null)
+
+    useEffect(() => {
+        fetchPasswords()
+    }, [])
+
 
     useEffect(() => {
         localStorage.setItem("passwords", JSON.stringify(passwords))
@@ -63,14 +78,14 @@ function App() {
         console.log(visiblePassword)
     }
 
-    function addPassword() {
+    async function addPassword() {
         if (password.website.trim() !== "" && password.pass.trim() !== "") {
             const newPassword = {
                 ...password,
                 username: password.username.trim() === "" ? password.website : password.username, id: uuidv4()
             }
             setPasswords([...passwords, newPassword])
-            console.log(passwords)
+            let res = await fetch('http://localhost:3000', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newPassword) })
             // let obj = {[newPassword.id]:false}
             // setVisiblePassword([...visiblePassword, obj])
             setPassword({ website: "", username: "", pass: "" })
@@ -91,24 +106,44 @@ function App() {
         passwordVisibilityRef.current.src = "icons/visible.svg"
     }
 
-    function handleUpdate() {
+    async function handleUpdate() {
         let tempPasswords = [...passwords]
-        tempPasswords[indexRef.current].website = password.website
-        tempPasswords[indexRef.current].username = password.username
-        tempPasswords[indexRef.current].pass = password.pass
-        setPasswords(tempPasswords)
-        setPassword({ website: "", username: "", pass: "" })
-        setisEditable(false)
-        toast('Update Successfull!')
+        let updatedPassword = {
+            ...tempPasswords[indexRef.current],
+            website: password.website,
+            username: password.username,
+            pass: password.pass
+        };
+        let res = await fetch(`http://localhost:3000/${updatedPassword.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedPassword),
+        });
+        if (res.ok) {
+            // Update frontend state
+            tempPasswords[indexRef.current] = updatedPassword;
+            setPasswords(tempPasswords);
+
+            // Reset input state
+            setPassword({ website: "", username: "", pass: "" });
+            setisEditable(false);
+            toast('Update Successful!');
+        } else {
+            toast('Update failed!');
+        }
     }
 
-    function handleDelete(id) {
-        let newPasswords = passwords.filter((element) => {
-            return element.id !== id
-        })
-        setPasswords(newPasswords)
-        toast('Delete Successfull!')
+    async function handleDelete(id) {
+        let res = await fetch(`http://localhost:3000/${id}`, {
+            method: 'DELETE',
+        });
+
+        if (res.ok) {
+            setPasswords(passwords.filter((element) => element.id !== id));
+            toast('Delete Successful!');
+        }
     }
+
 
     return (
         <>
@@ -170,7 +205,7 @@ function App() {
                                         <td className="px-1 border border-white py-1 lg:w-[30%]">
                                             <div className="flex justify-between">
                                                 <div className="break-all w-[80%]">
-                                                {element.username}
+                                                    {element.username}
                                                 </div>
                                                 <Lottie onClick={() => notify(element.username, "Username")} animationData={copy} loop={false} autoplay={false} style={{ height: 25, width: 25 }} />
                                             </div>
@@ -178,7 +213,7 @@ function App() {
                                         </td>
                                         <td className="px-1 w-[30%] border border-white py-1 lg:w-[30%]">
                                             <div className=" flex items-center justify-between">
-                                                {visiblePassword[element.id] ? <div className="break-all w-[40%]">{element.pass}</div>  : <div className="break-all">---</div>}
+                                                {visiblePassword[element.id] ? <div className="break-all w-[40%]">{element.pass}</div> : <div className="break-all">---</div>}
                                                 <span className="flex gap-2">
                                                     <img onClick={() => toggleVisibility(element.id)} src={visiblePassword[element.id] ? "icons/hidden.svg" : "icons/visible.svg"} alt="hidden" />
                                                     <Lottie onClick={() => notify(element.pass, "Password")} animationData={copy} loop={false} autoplay={false} style={{ height: 25, width: 25 }} />
@@ -187,8 +222,8 @@ function App() {
                                         </td>
                                         <td className="px-1 border border-white py-1">
                                             <div className="flex items-center justify-center">
-                                            <Lottie onClick={() => handleEdit(element.id)} animationData={edit} loop={false} autoplay={false} style={{ height: 25, width: 25 }} />
-                                            <Lottie onClick={() => handleDelete(element.id)} animationData={delete_lottie} loop={false} autoplay={false} style={{ height: 25, width: 25 }} />
+                                                <Lottie onClick={() => handleEdit(element.id)} animationData={edit} loop={false} autoplay={false} style={{ height: 25, width: 25 }} />
+                                                <Lottie onClick={() => handleDelete(element.id)} animationData={delete_lottie} loop={false} autoplay={false} style={{ height: 25, width: 25 }} />
                                             </div>
                                         </td>
                                     </tr>
