@@ -1,12 +1,15 @@
 import Navbar from "./components/Navbar"
-import Footer from "./components/Footer"
-import { useState, useRef, useEffect, use } from 'react'
+import Footer from "./components/Footer" 
+import Copy from "./components/Copy_Lottie"
+import Delete_Lottie from "./components/Delete_Lottie"
+import Edit_Lottie from "./components/Edit_Lottie"
+import { useState, useRef, useEffect } from 'react'
 import { v4 as uuidv4 } from 'uuid';
 import Lottie from "lottie-react";
 // import copy from './public/icons/copy.json?url'
-import copy from './icons/copy.json'
-import edit from './icons/edit.json'
-import delete_lottie from './icons/delete_lottie.json'
+// import copy from './icons/copy.json'
+// import edit from './icons/edit.json'
+// import delete_lottie from './icons/delete_lottie.json'
 import { ToastContainer, toast } from 'react-toastify';
 
 function App() {
@@ -40,7 +43,7 @@ function App() {
 
 
     useEffect(() => {
-        localStorage.setItem("passwords", JSON.stringify(passwords))
+        // localStorage.setItem("passwords", JSON.stringify(passwords))
         const visibilityObj = passwords.reduce((acc, item) => {
             acc[item.id] = false;
             return acc;
@@ -50,11 +53,10 @@ function App() {
     }, [passwords])
 
     const notify = (text, field) => {
-        toast(`${field} copied to clipboard! `, {
-            progressStyle: { background: "red" },
-        })
-        console.log(text)
-        navigator.clipboard.writeText(text)
+        // console.log(text)
+        toast(`${field} copied to clipboard! `)
+        navigator.clipboard.writeText(text).then(()=>{
+        }).catch(err => console.error("Failed to copy:", err))
     };
 
     function showPassword() {
@@ -69,13 +71,13 @@ function App() {
     }
 
     function toggleVisibility(id) {
-        console.log(visiblePassword)
-        console.log(id)
+        // console.log(visiblePassword)
+        // console.log(id)
         let newVisiblePassword = { ...visiblePassword }
         newVisiblePassword[id] = !newVisiblePassword[id]
         // = !newVisiblePasswords[index].id
         setVisiblePassword(newVisiblePassword)
-        console.log(visiblePassword)
+        // console.log(visiblePassword)
     }
 
     async function addPassword() {
@@ -88,13 +90,16 @@ function App() {
             let res = await fetch('http://localhost:3000', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newPassword) })
             // let obj = {[newPassword.id]:false}
             // setVisiblePassword([...visiblePassword, obj])
-            setPassword({ website: "", username: "", pass: "" })
-            toast('Added Successfully!')
+            if(res.ok){
+                setPassword({ website: "", username: "", pass: "" })
+                toast('Added Successfully!')
+            }
         }
     }
 
 
     function handleEdit(id) {
+        // console.log(id)
         setisEditable(true)
         let index = passwords.findIndex(item => {
             return item.id === id
@@ -198,7 +203,7 @@ function App() {
                                                     <a href={element.website} className="break-all">{element.website}</a>
                                                 </div>
                                                 <div >
-                                                    <Lottie onClick={() => notify(element.website, "Website")} animationData={copy} loop={false} autoplay={false} style={{ height: 25, width: 25 }} />
+                                                    <Copy notify={()=>notify(element.website,"Website")}/>
                                                 </div>
                                             </div>
                                         </td>
@@ -207,7 +212,7 @@ function App() {
                                                 <div className="break-all w-[80%]">
                                                     {element.username}
                                                 </div>
-                                                <Lottie onClick={() => notify(element.username, "Username")} animationData={copy} loop={false} autoplay={false} style={{ height: 25, width: 25 }} />
+                                                <Copy notify={()=>notify(element.username,"Username")}/>
                                             </div>
 
                                         </td>
@@ -216,15 +221,17 @@ function App() {
                                                 {visiblePassword[element.id] ? <div className="break-all w-[40%]">{element.pass}</div> : <div className="break-all">---</div>}
                                                 <span className="flex gap-2">
                                                     <img onClick={() => toggleVisibility(element.id)} src={visiblePassword[element.id] ? "icons/hidden.svg" : "icons/visible.svg"} alt="hidden" />
-                                                    <Lottie onClick={() => notify(element.pass, "Password")} animationData={copy} loop={false} autoplay={false} style={{ height: 25, width: 25 }} />
+                                                    <Copy notify={()=>notify(element.pass,"Password")}/>
                                                 </span>
                                             </div>
                                         </td>
                                         <td className="px-1 border border-white py-1">
                                             <div className="flex items-center justify-center">
-                                                <Lottie onClick={() => handleEdit(element.id)} animationData={edit} loop={false} autoplay={false} style={{ height: 25, width: 25 }} />
-                                                <Lottie onClick={() => handleDelete(element.id)} animationData={delete_lottie} loop={false} autoplay={false} style={{ height: 25, width: 25 }} />
+                                                <Edit_Lottie handleEdit={() => handleEdit(element.id)}/>
+                                                <Delete_Lottie handleDelete={() =>handleDelete(element.id)}/>
                                             </div>
+                                                {/* <Lottie onClick={} animationData={edit} loop={false} autoplay={false} style={{ height: 25, width: 25 }} /> */}
+                                                {/* <Lottie onClick={ } animationData={delete_lottie} loop={false} autoplay={false} style={{ height: 25, width: 25 }} /> */}
                                         </td>
                                     </tr>
                                     // return <div key={element.id}>Website:{element.website} username:{element.username} Pass:{element.pass}</div>
